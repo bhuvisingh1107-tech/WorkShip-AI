@@ -1,5 +1,5 @@
-import { PageContainer } from "@/components/page-container";
+import { CopilotChat } from "@/components/copilot-chat";
 
 export default function CopilotPage() {
-  return <PageContainer title="AI Copilot" />;
+  return <CopilotChat />;
 }
