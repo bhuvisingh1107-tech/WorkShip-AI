@@ -1,5 +1,6 @@
 from app.schemas.dashboard import DashboardResponse
 from app.schemas.document import DocumentBase, DocumentCreate, DocumentRead, DocumentUpdate
+from app.schemas.document_processing import DocumentProcessingResult, DocumentSection
 from app.schemas.employee import EmployeeBase, EmployeeCreate, EmployeeRead, EmployeeUpdate
 from app.schemas.incident import IncidentBase, IncidentCreate, IncidentRead, IncidentUpdate
 from app.schemas.log_entry import LogEntryBase, LogEntryCreate, LogEntryRead
@@ -12,6 +13,8 @@ __all__ = [
     "DocumentBase",
     "DocumentCreate",
     "DocumentRead",
+    "DocumentProcessingResult",
+    "DocumentSection",
     "EmployeeBase",
     "EmployeeCreate",
     "EmployeeRead",

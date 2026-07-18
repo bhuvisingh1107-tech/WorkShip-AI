@@ -24,9 +24,18 @@ def list_documents(
     sort_order: Literal["asc", "desc"] = "asc",
     category: str | None = None,
     source: str | None = None,
+    query: str | None = Query(None, min_length=1, description="Search title, content, summary, or tags"),
     service: DocumentService = Depends(get_document_service),
 ) -> PaginatedResponse[DocumentRead]:
-    items, total = service.list(skip=skip, limit=limit, sort_by=sort_by, sort_order=sort_order, category=category, source=source)
+    items, total = service.list(
+        skip=skip,
+        limit=limit,
+        sort_by=sort_by,
+        sort_order=sort_order,
+        category=category,
+        source=source,
+        query=query,
+    )
     return PaginatedResponse(items=items, total=total, skip=skip, limit=limit)
 
 

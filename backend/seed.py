@@ -11,12 +11,14 @@ from sqlalchemy.orm import Session
 
 from app.db.session import SessionLocal, initialize_database
 from app.models import Document, Employee, Incident, LogEntry, Meeting, Service, Team
+from app.services.document_processing import DocumentProcessingService
 
 
 @dataclass
 class SectionSummary:
     inserted: int = 0
     skipped: int = 0
+    updated: int = 0
 
 
 TEAM_DATA = [
@@ -212,28 +214,76 @@ def seed_services(session: Session, teams: dict[str, Team]) -> tuple[SectionSumm
 
 def seed_documents(session: Session) -> SectionSummary:
     summary = SectionSummary()
+    processing_service = DocumentProcessingService()
     for team, topics in DOCUMENT_TOPICS.items():
         for topic in topics:
             title = f"{team}: {topic}"
-            document = session.scalar(select(Document).where(Document.title == title))
-            if document is not None:
-                summary.skipped += 1
-                continue
-            session.add(
-                Document(
-                    title=title,
-                    category=team,
-                    source="WorkShip Internal Knowledge Base",
-                    content=(
-                        f"This WorkShip Technologies {team} document defines the "
-                        f"enterprise standard for {topic.lower()}. It is maintained "
-                        "by the responsible team and reviewed during the annual policy cycle."
-                    ),
-                )
+            category = _document_category(team, topic)
+            processing = processing_service.process(
+                title=title,
+                content=_enterprise_document_content(team, topic),
+                category=category,
+                source="WorkShip Internal Knowledge Base",
             )
-            summary.inserted += 1
+            document = session.scalar(select(Document).where(Document.title == title))
+            if document is None:
+                session.add(
+                    Document(
+                        title=title,
+                        category=category,
+                        source="WorkShip Internal Knowledge Base",
+                        content=processing.content,
+                        summary=processing.summary,
+                        tags=processing.tags,
+                    )
+                )
+                summary.inserted += 1
+                continue
+            if (
+                document.source == "WorkShip Internal Knowledge Base"
+                and len(document.content.split()) < 120
+            ):
+                document.category = category
+                document.content = processing.content
+                document.summary = processing.summary
+                document.tags = processing.tags
+                summary.updated += 1
+            else:
+                summary.skipped += 1
     session.commit()
     return summary
+
+
+def _document_category(team: str, topic: str) -> str:
+    if topic == "Incident Escalation Matrix":
+        return "Incident Reports"
+    if topic == "Business Continuity Contacts":
+        return "Meeting Notes"
+    if topic == "Information Security Policy":
+        return "Policies"
+    return {
+        "Engineering": "Engineering",
+        "IT Operations": "Operations",
+        "Security": "Security",
+        "Human Resources": "HR",
+        "Finance": "Policies",
+    }[team]
+
+
+def _enterprise_document_content(team: str, topic: str) -> str:
+    return f"""# {topic}
+
+## Purpose
+This document defines the WorkShip Technologies operating standard for {topic.lower()}. It gives employees a shared, repeatable approach for making decisions, completing work, and escalating risks in a controlled enterprise environment.
+
+## Scope
+The standard applies to the {team} organization and to partner teams when their work depends on this process. Team members must use the documented controls for planned work, urgent requests, and operational exceptions.
+
+## Operating Standard
+The accountable owner records the objective, confirms the required approvals, and communicates material changes to affected stakeholders. Work is completed through the approved systems of record, with evidence retained for review. Risks that could affect security, reliability, employee experience, or financial controls are escalated through the established incident and leadership channels.
+
+## Ownership and Review
+The {team} leadership team owns this document. It is reviewed at least annually and after any significant process, policy, or platform change. Questions and improvement requests should be submitted through the WorkShip Internal Knowledge Base."""
 
 
 def seed_incidents(
@@ -317,7 +367,10 @@ def print_summary(results: dict[str, SectionSummary]) -> None:
     print("WorkShip AI Enterprise Seed")
     print("==================================")
     for name, result in results.items():
-        print(f"{name}: {result.inserted} inserted, {result.skipped} skipped")
+        print(
+            f"{name}: {result.inserted} inserted, {result.updated} updated, "
+            f"{result.skipped} skipped"
+        )
     print("Seed completed successfully.")
 
 
