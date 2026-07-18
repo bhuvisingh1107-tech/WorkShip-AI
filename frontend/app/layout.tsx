@@ -5,7 +5,7 @@ import "./globals.css";
 export const metadata: Metadata = {
   title: { default: "WorkShip AI | Operations Intelligence", template: "%s | WorkShip AI" },
   description: "Enterprise operations intelligence for knowledge, incidents, and teams.",
-  icons: { icon: "/favicon.ico" },
+  icons: { icon: "/logo.png", apple: "/logo.png" },
 };
 
 export default function RootLayout({

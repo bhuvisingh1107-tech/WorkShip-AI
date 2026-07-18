@@ -39,10 +39,10 @@ export function CopilotChat() {
 
   return (
     <section className="mx-auto max-w-4xl px-4 py-8 sm:px-6 lg:px-8 lg:py-10">
-      <div className="rounded-xl border border-slate-200 bg-white shadow-sm">
+      <div className="rounded-xl border border-[#E9E5FF] bg-white shadow-sm shadow-[#B8B5FF]/10">
         <div className="border-b border-slate-200 px-5 py-5 sm:px-6">
           <div className="flex items-center gap-3">
-            <div className="rounded-lg bg-slate-900 p-2 text-white"><Sparkles className="size-5" /></div>
+            <div className="rounded-lg bg-gradient-to-br from-[#C4B5FD] to-[#CFFAFE] p-2 text-[#312E81]"><Sparkles className="size-5" /></div>
             <div>
               <h1 className="text-xl font-semibold text-slate-950">Enterprise Copilot</h1>
               <p className="mt-1 text-sm text-slate-500">Ask questions across company knowledge and operations runbooks.</p>
@@ -56,9 +56,8 @@ export function CopilotChat() {
           {error && <p className="rounded-lg bg-red-50 p-3 text-sm text-red-700">{error}</p>}
           {response && (
             <div className="space-y-5">
-              <div><p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Answer</p><p className="mt-2 text-sm leading-6 text-slate-800">{response.answer}</p></div>
-              <div><p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Sources</p><div className="mt-2 grid gap-2 sm:grid-cols-2">{response.sources.map((source) => <div className="rounded-lg border border-slate-200 p-3" key={source.title}><p className="text-sm font-medium text-slate-900">{source.title}</p><p className="mt-1 text-xs text-slate-500">{source.category ?? "Enterprise knowledge"} · {Math.round(source.similarity * 100)}% match</p></div>)}</div></div>
-              <div><p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Retrieved context</p><div className="mt-2 space-y-2">{response.context.map((snippet, index) => <p className="rounded-lg bg-slate-50 p-3 text-sm leading-6 text-slate-600" key={index}>{snippet}</p>)}</div></div>
+              <div className="rounded-xl bg-[#F5F3FF] p-4"><p className="text-xs font-semibold uppercase tracking-wide text-[#818CF8]">Answer</p><p className="mt-2 text-sm leading-6 text-[#312E81]">{response.answer}</p></div>
+              <div><p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Sources</p><div className="mt-2 grid gap-2 sm:grid-cols-2">{response.sources.map((source) => <div className="rounded-lg border border-[#E9E5FF] bg-[#FFFEFF] p-3" key={source.title}><p className="text-sm font-medium text-[#312E81]">{source.title}</p><p className="mt-1 text-xs text-slate-500">{source.category ?? "Enterprise knowledge"} · {Math.round(source.similarity * 100)}% match</p></div>)}</div></div>
             </div>
           )}
         </div>
