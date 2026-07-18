@@ -34,3 +34,27 @@ class IncidentRead(IncidentBase):
     updated_at: datetime
 
     model_config = ConfigDict(from_attributes=True)
+
+
+class IncidentSimulationRequest(BaseModel):
+    title: str
+    description: str
+    severity: str
+
+
+class RelatedIncident(BaseModel):
+    title: str
+    similarity: float
+
+
+class RelatedDocument(BaseModel):
+    title: str
+    similarity: float
+
+
+class IncidentSimulationResponse(BaseModel):
+    incident: IncidentRead
+    similarIncidents: list[RelatedIncident]
+    relatedDocuments: list[RelatedDocument]
+    recommendedActions: list[str]
+    timeline: list[str]

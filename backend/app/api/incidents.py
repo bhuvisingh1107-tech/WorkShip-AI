@@ -6,7 +6,15 @@ from sqlalchemy.orm import Session
 
 from app.db.session import get_db
 from app.schemas.common import MessageResponse, PaginatedResponse
-from app.schemas.incident import IncidentCreate, IncidentRead, IncidentUpdate
+from app.schemas.incident import (
+    IncidentCreate,
+    IncidentRead,
+    IncidentSimulationRequest,
+    IncidentSimulationResponse,
+    IncidentUpdate,
+    RelatedDocument,
+    RelatedIncident,
+)
 from app.services.incident import IncidentService
 
 router = APIRouter(prefix="/incidents", tags=["Incidents"])
@@ -40,6 +48,27 @@ def get_incident(incident_id: UUID, service: IncidentService = Depends(get_incid
 @router.post("", response_model=IncidentRead, status_code=status.HTTP_201_CREATED)
 def create_incident(payload: IncidentCreate, service: IncidentService = Depends(get_incident_service)) -> IncidentRead:
     return service.create(payload)
+
+
+@router.post("/simulate", response_model=IncidentSimulationResponse, status_code=status.HTTP_201_CREATED)
+def simulate_incident(
+    payload: IncidentSimulationRequest,
+    service: IncidentService = Depends(get_incident_service),
+) -> IncidentSimulationResponse:
+    incident, similar_incidents, documents = service.simulate(**payload.model_dump())
+    return IncidentSimulationResponse(
+        incident=incident,
+        similarIncidents=[
+            RelatedIncident(title=item.title, similarity=round(0.8 - index * 0.1, 2))
+            for index, item in enumerate(similar_incidents)
+        ],
+        relatedDocuments=[
+            RelatedDocument(title=document.title, similarity=round(similarity, 4))
+            for document, similarity in documents
+        ],
+        recommendedActions=["Check recent deployments", "Review service logs", "Notify service owner"],
+        timeline=["Incident detected", "Investigation started", "Owner assigned"],
+    )
 
 
 @router.patch("/{incident_id}", response_model=IncidentRead)
