@@ -51,6 +51,10 @@ class DocumentService:
             raise ResourceNotFoundError("Document not found")
         return resource
 
+    def semantic_search(self, *, query: str, limit: int):
+        query_embedding = self.embedding_service.generate_embedding(query)
+        return self.repository.semantic_search(query_embedding, limit)
+
     def create(self, payload: DocumentCreate) -> Document:
         processing = self.processing_service.process(
             title=payload.title,

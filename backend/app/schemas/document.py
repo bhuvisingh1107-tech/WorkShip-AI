@@ -30,3 +30,13 @@ class DocumentRead(DocumentBase):
     updated_at: datetime
 
     model_config = ConfigDict(from_attributes=True)
+
+
+class SemanticSearchResult(BaseModel):
+    document: DocumentRead
+    similarity: float
+
+
+class SemanticSearchResponse(BaseModel):
+    query: str
+    results: list[SemanticSearchResult]

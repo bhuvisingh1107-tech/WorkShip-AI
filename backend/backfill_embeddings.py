@@ -1,4 +1,4 @@
-"""Resumable backfill for documents that do not yet have embeddings."""
+"""Resumable local-embedding backfill for documents without embeddings."""
 
 import argparse
 

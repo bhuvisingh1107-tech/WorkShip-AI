@@ -2,14 +2,15 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from openai import OpenAI
+from sentence_transformers import SentenceTransformer
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from app.core.config import settings
 from app.models.document import Document
 
-EMBEDDING_MODEL = "text-embedding-3-small"
+EMBEDDING_MODEL = "all-MiniLM-L6-v2"
+MODEL_EMBEDDING_DIMENSIONS = 384
+STORED_EMBEDDING_DIMENSIONS = 1536
 
 
 @dataclass
@@ -19,11 +20,18 @@ class EmbeddingBackfillResult:
 
 
 class EmbeddingService:
-    """OpenAI embedding boundary for document storage and retrieval."""
+    """Local embedding boundary for document storage and retrieval."""
 
-    def __init__(self, db: Session, client: OpenAI | None = None) -> None:
+    _model: SentenceTransformer | None = None
+
+    def __init__(self, db: Session) -> None:
         self.db = db
-        self.client = client or OpenAI(api_key=settings.OPENAI_API_KEY)
+
+    @classmethod
+    def _get_model(cls) -> SentenceTransformer:
+        if cls._model is None:
+            cls._model = SentenceTransformer(EMBEDDING_MODEL)
+        return cls._model
 
     def generate_embedding(self, content: str) -> list[float]:
         return self.generate_embeddings([content])[0]
@@ -31,12 +39,26 @@ class EmbeddingService:
     def generate_embeddings(self, contents: list[str]) -> list[list[float]]:
         if not contents:
             return []
-        response = self.client.embeddings.create(
-            model=EMBEDDING_MODEL,
-            input=contents,
-            encoding_format="float",
+        embeddings = self._get_model().encode(
+            contents,
+            convert_to_numpy=True,
+            normalize_embeddings=True,
         )
-        return [item.embedding for item in sorted(response.data, key=lambda item: item.index)]
+        return [
+            self._pad_for_pgvector(embedding.tolist())
+            for embedding in embeddings
+        ]
+
+    @staticmethod
+    def _pad_for_pgvector(embedding: list[float]) -> list[float]:
+        if len(embedding) != MODEL_EMBEDDING_DIMENSIONS:
+            raise ValueError(
+                f"Expected {MODEL_EMBEDDING_DIMENSIONS} dimensions from {EMBEDDING_MODEL}, "
+                f"received {len(embedding)}"
+            )
+        return embedding + [0.0] * (
+            STORED_EMBEDDING_DIMENSIONS - MODEL_EMBEDDING_DIMENSIONS
+        )
 
     def update_document_embedding(self, document: Document) -> Document:
         document.embedding = self.generate_embedding(document.content)

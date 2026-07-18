@@ -5,5 +5,5 @@ pydantic
 pydantic-settings
 alembic
 psycopg[binary]
-openai
 pgvector
+sentence-transformers
