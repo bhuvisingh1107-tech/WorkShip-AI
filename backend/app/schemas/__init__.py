@@ -1,3 +1,4 @@
+from app.schemas.dashboard import DashboardResponse
 from app.schemas.document import DocumentBase, DocumentCreate, DocumentRead, DocumentUpdate
 from app.schemas.employee import EmployeeBase, EmployeeCreate, EmployeeRead, EmployeeUpdate
 from app.schemas.incident import IncidentBase, IncidentCreate, IncidentRead, IncidentUpdate
@@ -7,6 +8,7 @@ from app.schemas.service import ServiceBase, ServiceCreate, ServiceRead, Service
 from app.schemas.team import TeamBase, TeamCreate, TeamRead, TeamUpdate
 
 __all__ = [
+    "DashboardResponse",
     "DocumentBase",
     "DocumentCreate",
     "DocumentRead",

@@ -1,3 +1,4 @@
+from app.repositories.dashboard import DashboardRepository
 from app.repositories.document import DocumentRepository
 from app.repositories.employee import EmployeeRepository
 from app.repositories.incident import IncidentRepository
@@ -6,6 +7,7 @@ from app.repositories.service import ServiceRepository
 from app.repositories.team import TeamRepository
 
 __all__ = [
+    "DashboardRepository",
     "DocumentRepository",
     "EmployeeRepository",
     "IncidentRepository",

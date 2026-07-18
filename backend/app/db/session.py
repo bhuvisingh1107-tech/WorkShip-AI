@@ -1,12 +1,21 @@
 from collections.abc import Generator
+from typing import Any
 
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session, sessionmaker
+from sqlalchemy.pool import StaticPool
 
 from app.core.config import settings
 from app.db.database import Base
 
-engine = create_engine(settings.DATABASE_URL, pool_pre_ping=True)
+engine_options: dict[str, Any] = {"pool_pre_ping": True}
+if settings.DATABASE_URL == "sqlite://":
+    engine_options.update(
+        connect_args={"check_same_thread": False},
+        poolclass=StaticPool,
+    )
+
+engine = create_engine(settings.DATABASE_URL, **engine_options)
 
 SessionLocal = sessionmaker(
     autocommit=False,
