@@ -3,8 +3,9 @@ import { AppShell } from "@/components/app-shell";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "WorkShip AI",
-  description: "Your Intelligent Workplace Assistant",
+  title: { default: "WorkShip AI | Operations Intelligence", template: "%s | WorkShip AI" },
+  description: "Enterprise operations intelligence for knowledge, incidents, and teams.",
+  icons: { icon: "/favicon.ico" },
 };
 
 export default function RootLayout({

@@ -21,7 +21,7 @@ export function NavItem({
       aria-current={isActive ? "page" : undefined}
       className={`flex items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium ${
         isActive
-          ? "bg-slate-900 text-white"
+          ? "bg-indigo-50 text-indigo-950 shadow-sm ring-1 ring-inset ring-indigo-100"
           : "text-slate-600 hover:bg-slate-100 hover:text-slate-950"
       }`}
       href={href}

@@ -7,7 +7,7 @@ type NavbarProps = {
 
 export function Navbar({ onMenuClick }: NavbarProps) {
   return (
-    <header className="flex h-16 items-center justify-between border-b border-slate-200 bg-white px-4 sm:px-6">
+    <header className="flex h-16 items-center justify-between border-b border-slate-200/80 bg-white/90 px-4 backdrop-blur sm:px-6">
       <div className="flex items-center gap-3">
         <button
           aria-label="Open navigation"
@@ -18,7 +18,7 @@ export function Navbar({ onMenuClick }: NavbarProps) {
           <Menu aria-hidden="true" className="size-5" />
         </button>
         <Logo compact />
-        <p className="text-sm font-semibold text-slate-900">WorkShip AI</p>
+        <p className="text-sm font-semibold text-slate-900">Operations workspace</p>
       </div>
       <div className="flex items-center gap-3">
         <button

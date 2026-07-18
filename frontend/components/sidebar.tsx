@@ -54,7 +54,8 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
             <X aria-hidden="true" className="size-5" />
           </button>
         </div>
-        <nav aria-label="Primary navigation" className="mt-10 space-y-1">
+        <p className="mt-10 px-3 text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-400">Workspace</p>
+        <nav aria-label="Primary navigation" className="mt-3 space-y-1">
           {navigation.map((item) => (
             <NavItem
               {...item}

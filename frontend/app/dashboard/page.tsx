@@ -40,7 +40,7 @@ export default function DashboardPage() {
   ] as const;
 
   return <section className="space-y-7 px-4 py-8 sm:px-6 lg:px-8 lg:py-10">
-    <div><h1 className="text-2xl font-semibold tracking-tight text-slate-950">Dashboard</h1><p className="mt-1 text-sm text-slate-500">Enterprise operations overview.</p></div>
+    <div className="rounded-2xl bg-gradient-to-br from-slate-950 via-slate-900 to-indigo-950 px-6 py-7 text-white shadow-lg shadow-slate-950/10"><p className="text-xs font-semibold uppercase tracking-[0.18em] text-indigo-200">WorkShip AI</p><h1 className="mt-2 text-2xl font-semibold tracking-tight">Your operations command center</h1><p className="mt-2 max-w-2xl text-sm leading-6 text-slate-300">Monitor enterprise knowledge, services, and active operational signals from one connected workspace.</p></div>
     <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">{cards.map(([label, value, Icon]) => <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm" key={label}><Icon className="size-5 text-slate-500" /><p className="mt-4 text-2xl font-semibold text-slate-950">{value}</p><p className="mt-1 text-sm text-slate-500">{label}</p></div>)}</div>
     <div className="grid gap-5 lg:grid-cols-2">
       <Panel title="Incident severity"><div className="grid grid-cols-4 gap-3">{Object.entries(data.incidentAnalytics).map(([severity, count]) => <div className="rounded-lg bg-slate-50 p-3 text-center" key={severity}><p className="text-lg font-semibold text-slate-900">{count}</p><p className="mt-1 text-xs capitalize text-slate-500">{severity}</p></div>)}</div></Panel>
