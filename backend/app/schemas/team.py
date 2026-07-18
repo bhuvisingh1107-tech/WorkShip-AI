@@ -13,6 +13,11 @@ class TeamCreate(TeamBase):
     pass
 
 
+class TeamUpdate(BaseModel):
+    name: str | None = None
+    description: str | None = None
+
+
 class TeamRead(TeamBase):
     id: UUID
     created_at: datetime

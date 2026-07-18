@@ -18,6 +18,16 @@ class IncidentCreate(IncidentBase):
     pass
 
 
+class IncidentUpdate(BaseModel):
+    title: str | None = None
+    severity: str | None = None
+    status: str | None = None
+    service_id: UUID | None = None
+    owner_team_id: UUID | None = None
+    summary: str | None = None
+    root_cause: str | None = None
+
+
 class IncidentRead(IncidentBase):
     id: UUID
     created_at: datetime

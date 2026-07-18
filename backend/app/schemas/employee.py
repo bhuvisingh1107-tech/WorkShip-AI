@@ -16,6 +16,14 @@ class EmployeeCreate(EmployeeBase):
     pass
 
 
+class EmployeeUpdate(BaseModel):
+    full_name: str | None = None
+    email: str | None = None
+    role: str | None = None
+    manager_id: UUID | None = None
+    team_id: UUID | None = None
+
+
 class EmployeeRead(EmployeeBase):
     id: UUID
     created_at: datetime

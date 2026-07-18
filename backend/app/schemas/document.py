@@ -15,6 +15,13 @@ class DocumentCreate(DocumentBase):
     pass
 
 
+class DocumentUpdate(BaseModel):
+    title: str | None = None
+    category: str | None = None
+    source: str | None = None
+    content: str | None = None
+
+
 class DocumentRead(DocumentBase):
     id: UUID
     created_at: datetime
