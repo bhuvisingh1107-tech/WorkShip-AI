@@ -1,12 +1,15 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from typing import TYPE_CHECKING
 
-from sentence_transformers import SentenceTransformer
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.models.document import Document
+
+if TYPE_CHECKING:
+    from sentence_transformers import SentenceTransformer
 
 EMBEDDING_MODEL = "all-MiniLM-L6-v2"
 MODEL_EMBEDDING_DIMENSIONS = 384
@@ -22,14 +25,16 @@ class EmbeddingBackfillResult:
 class EmbeddingService:
     """Local embedding boundary for document storage and retrieval."""
 
-    _model: SentenceTransformer | None = None
+    _model: "SentenceTransformer | None" = None
 
     def __init__(self, db: Session) -> None:
         self.db = db
 
     @classmethod
-    def _get_model(cls) -> SentenceTransformer:
+    def _get_model(cls) -> "SentenceTransformer":
         if cls._model is None:
+            from sentence_transformers import SentenceTransformer
+
             cls._model = SentenceTransformer(EMBEDDING_MODEL)
         return cls._model
 
