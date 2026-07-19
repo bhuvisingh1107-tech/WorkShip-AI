@@ -7,4 +7,3 @@ alembic
 psycopg[binary]
 pgvector
 sentence-transformers==3.0.1
-torch==2.2.2
