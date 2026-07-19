@@ -41,7 +41,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
         />
       )}
       <aside
-        className={`fixed inset-y-0 left-0 z-40 flex w-72 flex-col border-r border-[#E9E5FF] bg-[#F5F3FF] px-4 py-5 ${
+        className={`fixed inset-y-0 left-0 z-40 flex w-72 flex-col border-r border-[#E9E5FF] bg-[#F5F3FF] px-4 py-5 dark:border-indigo-900 dark:bg-slate-900 ${
           isOpen ? "translate-x-0" : "-translate-x-full"
         } lg:translate-x-0`}
       >

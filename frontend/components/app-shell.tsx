@@ -12,7 +12,7 @@ export function AppShell({ children }: AppShellProps) {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   return (
-    <div className="min-h-screen bg-[#FAFAF9]">
+    <div className="min-h-screen bg-[#FAFAF9] dark:bg-slate-950">
       <Sidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
       <div className="min-h-screen lg:pl-72">
         <Navbar onMenuClick={() => setIsSidebarOpen(true)} />

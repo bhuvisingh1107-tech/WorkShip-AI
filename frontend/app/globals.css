@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@custom-variant dark (&:where(.dark, .dark *));
 
 :root {
   --background: #fafaf9;
@@ -22,3 +23,25 @@ body {
   color: var(--foreground);
   font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
 }
+
+.dark {
+  --background: #0f172a;
+  --foreground: #e0e7ff;
+}
+
+.dark .bg-white,
+.dark .bg-white\/90 {
+  background-color: #172033 !important;
+}
+
+.dark [class*="bg-[#F5F3FF]"] { background-color: #1e1b4b !important; }
+.dark [class*="bg-[#FAFAF9]"] { background-color: #0f172a !important; }
+.dark [class*="border-[#E9E5FF]"],
+.dark [class*="border-[#DCD6FF]"] { border-color: #3730a3 !important; }
+.dark [class*="text-[#312E81]"] { color: #e0e7ff !important; }
+.dark .text-slate-900, .dark .text-slate-800 { color: #e2e8f0 !important; }
+.dark .text-slate-700, .dark .text-slate-600, .dark .text-slate-500 { color: #b6c2d4 !important; }
+.dark .bg-slate-50, .dark .bg-slate-100 { background-color: #1e293b !important; }
+.dark .border-slate-100, .dark .border-slate-200, .dark .border-slate-300 { border-color: #334155 !important; }
+.dark input, .dark textarea, .dark select { background-color: #111827 !important; color: #e0e7ff !important; }
+.dark .bg-\[\#FBCFE8\] { background-color: #4c1d3b !important; }
