@@ -59,10 +59,10 @@ export default function IncidentsPage() {
           {error && <p className="rounded-lg bg-red-50 p-3 text-sm text-red-700">{error}</p>}
           {!result && !isLoading && !error && <p className="text-sm text-slate-500">Submit the simulation to investigate related incidents and knowledge.</p>}
           {result && <div className="space-y-5">
-            <div className="rounded-lg bg-[#F5F3FF] p-4"><p className="text-xs font-semibold uppercase tracking-wide text-[#818CF8]">Simulated incident</p><p className="mt-1 font-semibold text-[#312E81]">{result.incident.title}</p><p className="mt-1 text-sm text-slate-600">{result.incident.severity} · {result.incident.status}</p></div>
+            <div className="rounded-lg bg-[#F5F3FF] p-4"><p className="text-xs font-semibold uppercase tracking-wide text-[#818CF8]">Simulated incident</p><p className="mt-1 font-semibold text-[#312E81]">{result.incident.title}</p><p className="mt-2 flex items-center gap-2 text-sm text-slate-600"><span className="rounded-full bg-[#FBCFE8] px-2 py-1 text-xs font-medium capitalize text-[#8A4166]">{result.incident.severity}</span>{result.incident.status}</p></div>
             <div className="grid gap-5 md:grid-cols-2"><ResultList title="Similar incidents" items={result.similarIncidents.map((item) => `${item.title} · ${Math.round(item.similarity * 100)}% match`)} /><ResultList title="Related documents" items={result.relatedDocuments.map((item) => item.title)} /></div>
             <div><h2 className="text-sm font-semibold text-slate-900">Recommended actions</h2><ul className="mt-2 space-y-2">{result.recommendedActions.map((action) => <li className="flex items-center gap-2 text-sm text-slate-700" key={action}><Check className="size-4 text-emerald-600" />{action}</li>)}</ul></div>
-            <div><h2 className="text-sm font-semibold text-slate-900">Timeline</h2><ol className="mt-2 space-y-2 border-l border-slate-200 pl-4">{result.timeline.map((step) => <li className="text-sm text-slate-700" key={step}>{step}</li>)}</ol></div>
+            <div><h2 className="text-sm font-semibold text-slate-900">Investigation progress</h2><ol className="mt-3 space-y-3 border-l-2 border-[#C4B5FD] pl-4">{result.timeline.map((step, index) => <li className="relative text-sm text-slate-700" key={step}><span className="absolute -left-[23px] flex size-4 items-center justify-center rounded-full bg-[#B8B5FF] text-[9px] text-[#312E81]">{index + 1}</span>{step}</li>)}</ol></div>
           </div>}
         </div>
       </div>
