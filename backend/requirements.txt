@@ -6,4 +6,5 @@ pydantic-settings
 alembic
 psycopg[binary]
 pgvector
-sentence-transformers
+sentence-transformers==3.0.1
+torch==2.2.2 --index-url https://download.pytorch.org/whl/cpu
