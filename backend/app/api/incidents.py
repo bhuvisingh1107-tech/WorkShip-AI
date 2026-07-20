@@ -6,6 +6,7 @@ from sqlalchemy.orm import Session
 
 from app.api import deps
 from app.db.session import get_db
+from app.models.employee import Employee
 from app.schemas.common import MessageResponse, PaginatedResponse
 from app.schemas.incident import (
     IncidentCreate,
@@ -18,7 +19,7 @@ from app.schemas.incident import (
 )
 from app.services.incident import IncidentService
 
-router = APIRouter(prefix="/incidents", paramses=["Incidents"])
+router = APIRouter(prefix="/incidents", tags=["Incidents"])
 
 
 def get_incident_service(
