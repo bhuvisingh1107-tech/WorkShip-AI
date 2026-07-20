@@ -86,21 +86,25 @@ def simulate_incident(
     current_user: Employee = Depends(deps.get_current_active_user),
     service: IncidentService = Depends(get_incident_service),
 ) -> IncidentSimulationResponse:
-    incident, similar_incidents, documents = service.simulate(
+    incident, similar_incidents, documents, analysis = service.simulate(
         title=payload.title, description=payload.description, severity=payload.severity
     )
     return IncidentSimulationResponse(
         incident=incident,
         similarIncidents=[
-            RelatedIncident(title=item.title, similarity=round(0.8 - index * 0.1, 2))
-            for index, item in enumerate(similar_incidents)
+            RelatedIncident(
+                title=item.title,
+                relationship="Recent incident on the same service; not a semantic similarity score",
+            )
+            for item in similar_incidents
         ],
         relatedDocuments=[
             RelatedDocument(title=document.title, similarity=round(similarity, 4))
             for document, similarity in documents
         ],
-        recommendedActions=["Check recent deployments", "Review service logs", "Notify service owner"],
-        timeline=["Incident detected", "Investigation started", "Owner assigned"],
+        recommendedActions=analysis.recommendedActions,
+        timeline=analysis.timeline,
+        rootCauseHypothesis=analysis.rootCauseHypothesis,
     )
 
 

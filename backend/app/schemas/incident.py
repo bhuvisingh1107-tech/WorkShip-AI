@@ -1,7 +1,7 @@
 from datetime import datetime
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class IncidentBase(BaseModel):
@@ -45,7 +45,8 @@ class IncidentSimulationRequest(BaseModel):
 
 class RelatedIncident(BaseModel):
     title: str
-    similarity: float
+    # Incident lookup is currently ordered by recency, rather than by semantic score.
+    relationship: str
 
 
 class RelatedDocument(BaseModel):
@@ -59,3 +60,23 @@ class IncidentSimulationResponse(BaseModel):
     relatedDocuments: list[RelatedDocument]
     recommendedActions: list[str]
     timeline: list[str]
+    rootCauseHypothesis: str
+
+
+class IncidentAIAnalysis(BaseModel):
+    recommendedActions: list[str] = Field(
+        min_length=3,
+        max_length=5,
+        description="Specific actions grounded in the incident and retrieved knowledge.",
+    )
+    timeline: list[str] = Field(
+        min_length=3,
+        max_length=6,
+        description="Ordered investigation and mitigation steps for this incident.",
+    )
+    rootCauseHypothesis: str = Field(
+        min_length=1,
+        description="A short, evidence-based root-cause hypothesis.",
+    )
+
+    model_config = ConfigDict(extra="forbid")
