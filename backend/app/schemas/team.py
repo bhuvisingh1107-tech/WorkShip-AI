@@ -20,6 +20,7 @@ class TeamUpdate(BaseModel):
 
 class TeamRead(TeamBase):
     id: UUID
+    workspace_id: UUID
     created_at: datetime
     updated_at: datetime
 

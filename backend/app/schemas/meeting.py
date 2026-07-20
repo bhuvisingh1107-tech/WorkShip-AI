@@ -24,6 +24,7 @@ class MeetingUpdate(BaseModel):
 
 class MeetingRead(MeetingBase):
     id: UUID
+    workspace_id: UUID
     created_at: datetime.datetime
     updated_at: datetime.datetime
 

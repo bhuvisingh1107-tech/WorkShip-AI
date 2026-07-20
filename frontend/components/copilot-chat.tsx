@@ -2,6 +2,7 @@
 
 import { FormEvent, useState } from "react";
 import { LoaderCircle, Send, Sparkles } from "lucide-react";
+import { fetcher } from '@/lib/fetcher';
 
 type CopilotResponse = {
   answer: string;
@@ -23,13 +24,12 @@ export function CopilotChat() {
     setError("");
     setIsLoading(true);
     try {
-      const result = await fetch("/api/copilot/query", {
+      const result = await fetcher<CopilotResponse>("/api/copilot/query", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ question: trimmedQuestion }),
       });
-      if (!result.ok) throw new Error("Unable to reach the Copilot service.");
-      setResponse((await result.json()) as CopilotResponse);
+      setResponse(result);
     } catch (requestError) {
       setError(requestError instanceof Error ? requestError.message : "Something went wrong.");
     } finally {
@@ -39,7 +39,7 @@ export function CopilotChat() {
 
   return (
     <section className="mx-auto max-w-4xl px-4 py-8 sm:px-6 lg:px-8 lg:py-10">
-      <div className="rounded-xl border border-[#E9E5FF] bg-white shadow-sm shadow-[#B8B5FF]/10">
+      <div className="rounded-xl border border-[#E9E5FF] bg-white shadow-sm shadow-[B8B5FF]/10">
         <div className="border-b border-slate-200 px-5 py-5 sm:px-6">
           <div className="flex items-center gap-3">
             <div className="rounded-lg bg-gradient-to-br from-[#C4B5FD] to-[#CFFAFE] p-2 text-[#312E81]"><Sparkles className="size-5" /></div>

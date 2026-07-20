@@ -1,10 +1,11 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 
 from sqlalchemy import select
 from sqlalchemy.orm import Session
+from uuid import UUID
 
 from app.models.document import Document
 
@@ -28,8 +29,9 @@ class EmbeddingService:
 
     _model: "SentenceTransformer | None" = None
 
-    def __init__(self, db: Session) -> None:
+    def __init__(self, db: Session, workspace_id: Optional[UUID] = None) -> None:
         self.db = db
+        self.workspace_id = workspace_id
 
     @classmethod
     def _get_model(cls) -> "SentenceTransformer":
@@ -89,14 +91,10 @@ class EmbeddingService:
         result = EmbeddingBackfillResult()
 
         while True:
-            documents = list(
-                self.db.scalars(
-                    select(Document)
-                    .where(Document.embedding.is_(None))
-                    .order_by(Document.created_at)
-                    .limit(batch_size)
-                ).all()
-            )
+            query = select(Document).where(Document.embedding.is_(None)).order_by(Document.created_at)
+            if self.workspace_id is not None:
+                query = query.where(Document.workspace_id == self.workspace_id)
+            documents = list(self.db.scalars(query.limit(batch_size)).all())
 
             if not documents:
                 return result

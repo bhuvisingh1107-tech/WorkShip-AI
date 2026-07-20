@@ -1,5 +1,6 @@
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
+from uuid import UUID
 
 from app.models.document import Document
 from app.models.employee import Employee
@@ -12,17 +13,19 @@ from app.models.team import Team
 class DashboardRepository:
     """Read-optimized aggregation queries for dashboard data."""
 
-    def __init__(self, db: Session) -> None:
+    def __init__(self, db: Session, workspace_id: UUID) -> None:
         self.db = db
+        self.workspace_id = workspace_id
 
     def get_overview_and_incident_counts(self) -> dict[str, int]:
         def count(model):
-            return select(func.count()).select_from(model).scalar_subquery()
+            return select(func.count()).select_from(model).where(model.workspace_id == self.workspace_id).scalar_subquery()
 
         def severity_count(severity: str):
             return (
                 select(func.count())
                 .select_from(Incident)
+                .where(Incident.workspace_id == self.workspace_id)
                 .where(func.lower(Incident.severity) == severity)
                 .scalar_subquery()
             )
@@ -48,23 +51,32 @@ class DashboardRepository:
         are represented by an explicit unclassified bucket.
         """
 
-        total = self.db.scalar(select(func.count()).select_from(Service)) or 0
+        total = self.db.scalar(select(func.count()).select_from(Service).where(Service.workspace_id == self.workspace_id)) or 0
         return {"unclassified": total}
 
     def get_recent_activity(self) -> tuple[list[Incident], list[Meeting], list[Document]]:
         incidents = list(
             self.db.scalars(
-                select(Incident).order_by(Incident.created_at.desc()).limit(5)
+                select(Incident)
+                .where(Incident.workspace_id == self.workspace_id)
+                .order_by(Incident.created_at.desc())
+                .limit(5)
             ).all()
         )
         meetings = list(
             self.db.scalars(
-                select(Meeting).order_by(Meeting.created_at.desc()).limit(5)
+                select(Meeting)
+                .where(Meeting.workspace_id == self.workspace_id)
+                .order_by(Meeting.created_at.desc())
+                .limit(5)
             ).all()
         )
         documents = list(
             self.db.scalars(
-                select(Document).order_by(Document.created_at.desc()).limit(5)
+                select(Document)
+                .where(Document.workspace_id == self.workspace_id)
+                .order_by(Document.created_at.desc())
+                .limit(5)
             ).all()
         )
         return incidents, meetings, documents

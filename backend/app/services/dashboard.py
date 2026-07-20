@@ -1,4 +1,5 @@
 from sqlalchemy.orm import Session
+from uuid import UUID
 
 from app.repositories.dashboard import DashboardRepository
 from app.schemas.dashboard import (
@@ -11,8 +12,8 @@ from app.schemas.dashboard import (
 
 
 class DashboardService:
-    def __init__(self, db: Session) -> None:
-        self.repository = DashboardRepository(db)
+    def __init__(self, db: Session, workspace_id: UUID) -> None:
+        self.repository = DashboardRepository(db, workspace_id)
 
     def get_dashboard(self) -> DashboardResponse:
         counts = self.repository.get_overview_and_incident_counts()

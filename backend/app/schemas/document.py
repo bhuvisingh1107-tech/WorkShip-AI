@@ -24,6 +24,7 @@ class DocumentUpdate(BaseModel):
 
 class DocumentRead(DocumentBase):
     id: UUID
+    workspace_id: UUID
     summary: str | None = None
     tags: list[str] | None = None
     created_at: datetime

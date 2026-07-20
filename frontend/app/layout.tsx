@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import { AppShell } from "@/components/app-shell";
 import "./globals.css";
+import { AuthProvider } from "@/context/AuthProvider";
+import AuthRedirectHandler from "./AuthRedirectHandler";
 
 export const metadata: Metadata = {
   title: { default: "WorkShip AI | Operations Intelligence", template: "%s | WorkShip AI" },
@@ -16,7 +18,10 @@ export default function RootLayout({
   return (
     <html lang="en" className="h-full antialiased">
       <body className="min-h-full">
-        <AppShell>{children}</AppShell>
+        <AuthProvider>
+          <AuthRedirectHandler />
+          <AppShell>{children}</AppShell>
+        </AuthProvider>
       </body>
     </html>
   );

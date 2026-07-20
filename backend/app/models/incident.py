@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 from uuid import UUID
 
-from sqlalchemy import ForeignKey, String, Text
+from sqlalchemy import String, Text, ForeignKey, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.database import Base, TimestampMixin, UUIDPrimaryKeyMixin
@@ -15,7 +15,11 @@ if TYPE_CHECKING:
 
 class Incident(UUIDPrimaryKeyMixin, TimestampMixin, Base):
     __tablename__ = "incidents"
+    __table_args__ = (
+        UniqueConstraint("workspace_id", "title", name="uq_incident_workspace_title"),
+    )
 
+    workspace_id: Mapped[UUID] = mapped_column(ForeignKey("workspaces.id"), nullable=False, index=True)
     title: Mapped[str] = mapped_column(String(500))
     severity: Mapped[str] = mapped_column(String(100))
     status: Mapped[str] = mapped_column(String(100))

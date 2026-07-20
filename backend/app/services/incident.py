@@ -10,46 +10,51 @@ from app.services.document import DocumentService
 
 
 class IncidentService:
-    def __init__(self, db: Session) -> None:
+    def __init__(self, db: Session, workspace_id: UUID) -> None:
         self.repository = IncidentRepository(db)
+        self.workspace_id = workspace_id
 
     def list(
         self,
         *,
-        skip: int,
-        limit: int,
-        sort_by: str,
-        sort_order: str,
-        service_id: UUID | None,
-        owner_team_id: UUID | None,
-        severity: str | None,
-        status: str | None,
+        skip: int = 0,
+        limit: int = 100,
+        sort_by: str = "created_at",
+        sort_order: str = "desc",
+        service_id: UUID | None = None,
+        owner_team_id: UUID | None = None,
+        severity: str | None = None,
+        status: str | None = None,
     ):
-        filters = []
+        filters = [self.repository.model.workspace_id == self.workspace_id]
         if service_id:
-            filters.append(Incident.service_id == service_id)
+            filters.append(self.repository.model.service_id == service_id)
         if owner_team_id:
-            filters.append(Incident.owner_team_id == owner_team_id)
+            filters.append(self.repository.model.owner_team_id == owner_team_id)
         if severity:
-            filters.append(Incident.severity == severity)
+            filters.append(self.repository.model.severity == severity)
         if status:
-            filters.append(Incident.status == status)
+            filters.append(self.repository.model.status == status)
         return self.repository.list(skip=skip, limit=limit, sort_by=sort_by, sort_order=sort_order, filters=filters)
 
-    def get(self, resource_id: UUID) -> Incident:
-        resource = self.repository.get(resource_id)
-        if resource is None:
+    def get(self, incident_id: UUID) -> Incident:
+        incident = self.repository.get(incident_id)
+        if incident is None or incident.workspace_id != self.workspace_id:
             raise ResourceNotFoundError("Incident not found")
-        return resource
+        return incident
 
     def create(self, payload: IncidentCreate) -> Incident:
-        return self.repository.create(payload.model_dump())
+        data = payload.model_dump()
+        data["workspace_id"] = self.workspace_id
+        return self.repository.create(data)
 
-    def update(self, resource_id: UUID, payload: IncidentUpdate) -> Incident:
-        return self.repository.update(self.get(resource_id), payload.model_dump(exclude_unset=True))
+    def update(self, incident_id: UUID, payload: IncidentUpdate) -> Incident:
+        incident = self.get(incident_id)
+        return self.repository.update(incident, payload.model_dump(exclude_unset=True))
 
-    def delete(self, resource_id: UUID) -> None:
-        self.repository.delete(self.get(resource_id))
+    def delete(self, incident_id: UUID) -> None:
+        incident = self.get(incident_id)
+        self.repository.delete(incident)
 
     def simulate(self, *, title: str, description: str, severity: str):
         from app.models.service import Service
@@ -66,7 +71,10 @@ class IncidentService:
             ),
             "Incident Command Center",
         )
-        service = self.repository.db.query(Service).filter(Service.name == service_name).one()
+        service = self.repository.db.query(Service).filter(
+            Service.workspace_id == self.workspace_id,
+            Service.name == service_name
+        ).one()
         incident = self.create(
             IncidentCreate(
                 title=title,
@@ -87,7 +95,7 @@ class IncidentService:
             severity=None,
             status=None,
         )
-        documents = DocumentService(self.repository.db).semantic_search(
+        documents = DocumentService(self.repository.db, self.workspace_id).semantic_search(
             query=f"{title} {description}", limit=3
         )
         return incident, similar_incidents[1:], documents

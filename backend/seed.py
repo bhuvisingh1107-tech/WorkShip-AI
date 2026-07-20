@@ -1,16 +1,26 @@
-"""Idempotent enterprise seed data for WorkShip Technologies."""
+"""Idempotent enterprise seed data for WorkShip AI."""
 
 from __future__ import annotations
 
 from dataclasses import dataclass
-from datetime import date, datetime, timedelta, timezone
+from datetime import date, datetime, timezone
+from uuid import UUID
 
 from sqlalchemy import select
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
 
 from app.db.session import SessionLocal, initialize_database
-from app.models import Document, Employee, Incident, LogEntry, Meeting, Service, Team
+from app.models import (
+    Document,
+    Employee,
+    Incident,
+    LogEntry,
+    Meeting,
+    Service,
+    Team,
+    Workspace,
+)
 from app.services.document_processing import DocumentProcessingService
 
 
@@ -92,19 +102,64 @@ SERVICE_DATA = [
 
 DOCUMENT_TOPICS = {
     "Engineering": [
-        "Platform Architecture Overview", "API Development Standards", "Frontend Engineering Guide", "Backend Engineering Guide", "Production Release Checklist", "On-Call Handbook", "Code Review Standards", "Service Ownership Policy", "Observability Playbook", "Disaster Recovery Runbook"
+        "Platform Architecture Overview",
+        "API Development Standards",
+        "Frontend Engineering Guide",
+        "Backend Engineering Guide",
+        "Production Release Checklist",
+        "On-Call Handbook",
+        "Code Review Standards",
+        "Service Ownership Policy",
+        "Observability Playbook",
+        "Disaster Recovery Runbook"
     ],
     "IT Operations": [
-        "Endpoint Enrollment Guide", "Corporate Device Policy", "VPN Access Guide", "IT Service Request Process", "Incident Escalation Matrix", "Identity Access Provisioning", "Collaboration Suite Guide", "Network Change Procedure", "Asset Management Standard", "Business Continuity Contacts"
+        "Endpoint Enrollment Guide",
+        "Corporate Device Policy",
+        "VPN Access Guide",
+        "IT Service Request Process",
+        "Incident Escalation Matrix",
+        "Identity Access Provisioning",
+        "Collaboration Suite Guide",
+        "Network Change Procedure",
+        "Asset Management Standard",
+        "Business Continuity Contacts"
     ],
     "Security": [
-        "Information Security Policy", "Secure Development Standard", "Phishing Response Guide", "Security Incident Response Plan", "Access Review Procedure", "Data Classification Standard", "Vendor Risk Assessment Guide", "Vulnerability Management Policy", "Security Awareness Handbook", "Privileged Access Procedure"
+        "Information Security Policy",
+        "Secure Development Standard",
+        "Phishing Response Guide",
+        "Security Incident Response Plan",
+        "Access Review Procedure",
+        "Data Classification Standard",
+        "Vendor Risk Assessment Guide",
+        "Vulnerability Management Policy",
+        "Security Awareness Handbook",
+        "Privileged Access Procedure"
     ],
     "Human Resources": [
-        "Employee Handbook", "New Hire Onboarding Guide", "Performance Review Process", "Remote Work Policy", "Leave and Benefits Guide", "Career Development Framework", "Manager Coaching Guide", "Workplace Conduct Policy", "Compensation Philosophy", "Employee Recognition Program"
+        "Employee Handbook",
+        "New Hire Onboarding Guide",
+        "Performance Review Process",
+        "Remote Work Policy",
+        "Leave and Benefits Guide",
+        "Career Development Framework",
+        "Manager Coaching Guide",
+        "Workplace Conduct Policy",
+        "Compensation Philosophy",
+        "Employee Recognition Program"
     ],
     "Finance": [
-        "Annual Budget Planning Guide", "Expense Reimbursement Policy", "Procurement Approval Matrix", "Month-End Close Checklist", "Revenue Recognition Overview", "Travel and Entertainment Policy", "Financial Controls Handbook", "Vendor Payment Procedure", "Forecasting Methodology", "Audit Readiness Guide"
+        "Annual Budget Planning Guide",
+        "Expense Reimbursement Policy",
+        "Procurement Approval Matrix",
+        "Month-End Close Checklist",
+        "Revenue Recognition Overview",
+        "Travel and Entertainment Policy",
+        "Financial Controls Handbook",
+        "Vendor Payment Procedure",
+        "Forecasting Methodology",
+        "Audit Readiness Guide"
     ],
 }
 
@@ -147,17 +202,51 @@ MEETING_DATA = [
 LOG_START = datetime(2026, 1, 27, 8, 0, tzinfo=timezone.utc)
 LOG_LEVELS = ["INFO", "INFO", "INFO", "WARNING", "ERROR"]
 LOG_MESSAGES = [
-    "Health check completed successfully", "Scheduled workflow completed", "Configuration refresh applied", "Request latency remains within target", "Background worker processed queued items", "Access policy evaluation completed", "Service dependency check passed", "Capacity utilization recorded", "Audit event persisted", "Retryable operation completed"
+    "Health check completed successfully",
+    "Scheduled workflow completed",
+    "Configuration refresh applied",
+    "Request latency remains within target",
+    "Background worker processed queued items",
+    "Access policy evaluation completed",
+    "Service dependency check passed",
+    "Capacity utilization recorded",
+    "Audit event persisted",
+    "Retryable operation completed"
 ]
 
 
-def seed_teams(session: Session) -> tuple[SectionSummary, dict[str, Team]]:
+def seed_workspaces(session: Session) -> tuple[SectionSummary, dict[str, Workspace]]:
+    summary = SectionSummary()
+    workspaces: dict[str, Workspace] = {}
+    # Create a default workspace for existing data
+    workspace = session.scalar(select(Workspace).where(Workspace.slug == "workship-technologies"))
+    if workspace is None:
+        workspace = Workspace(
+            company_name="WorkShip Technologies",
+            slug="workship-technologies",
+            logo=None,
+            plan="enterprise",
+        )
+        session.add(workspace)
+        summary.inserted += 1
+    else:
+        summary.skipped += 1
+    workspaces[workspace.slug] = workspace
+    session.commit()
+    return summary, workspaces
+
+
+def seed_teams(session: Session, workspace_id: UUID) -> tuple[SectionSummary, dict[str, Team]]:
     summary = SectionSummary()
     teams: dict[str, Team] = {}
     for name, description in TEAM_DATA:
-        team = session.scalar(select(Team).where(Team.name == name))
+        team = session.scalar(select(Team).where(Team.workspace_id == workspace_id, Team.name == name))
         if team is None:
-            team = Team(name=name, description=description)
+            team = Team(
+                workspace_id=workspace_id,
+                name=name,
+                description=description,
+            )
             session.add(team)
             summary.inserted += 1
         else:
@@ -167,7 +256,7 @@ def seed_teams(session: Session) -> tuple[SectionSummary, dict[str, Team]]:
     return summary, teams
 
 
-def seed_employees(session: Session, teams: dict[str, Team]) -> SectionSummary:
+def seed_employees(session: Session, teams: dict[str, Team], workspace_id: UUID) -> SectionSummary:
     summary = SectionSummary()
     employees: dict[str, Employee] = {
         employee.email: employee for employee in session.scalars(select(Employee)).all()
@@ -176,13 +265,26 @@ def seed_employees(session: Session, teams: dict[str, Team]) -> SectionSummary:
         if email in employees:
             summary.skipped += 1
             continue
+        # Split full name into first and last (simple split)
+        parts = full_name.strip().split()
+        first_name = parts[0] if len(parts) > 0 else ""
+        last_name = " ".join(parts[1:]) if len(parts) > 1 else ""
         manager = employees.get(manager_email) if manager_email else None
         employee = Employee(
+            workspace_id=workspace_id,
+            first_name=first_name if first_name else None,
+            last_name=last_name if last_name else None,
             full_name=full_name,
             email=email,
             role=role,
+            is_active=True,
+            avatar=None,
+            phone=None,
+            department=None,
+            job_title=role,  # approximate job title with role
+            manager_id=manager.id if manager else None,
             team_id=teams[team_name].id,
-            manager=manager,
+            last_login=None,
         )
         session.add(employee)
         employees[email] = employee
@@ -191,13 +293,14 @@ def seed_employees(session: Session, teams: dict[str, Team]) -> SectionSummary:
     return summary
 
 
-def seed_services(session: Session, teams: dict[str, Team]) -> tuple[SectionSummary, dict[str, Service]]:
+def seed_services(session: Session, teams: dict[str, Team], workspace_id: UUID) -> tuple[SectionSummary, dict[str, Service]]:
     summary = SectionSummary()
     services: dict[str, Service] = {}
     for name, description, owner_team, criticality in SERVICE_DATA:
-        service = session.scalar(select(Service).where(Service.name == name))
+        service = session.scalar(select(Service).where(Service.workspace_id == workspace_id, Service.name == name))
         if service is None:
             service = Service(
+                workspace_id=workspace_id,
                 name=name,
                 description=description,
                 owner_team_id=teams[owner_team].id,
@@ -212,7 +315,7 @@ def seed_services(session: Session, teams: dict[str, Team]) -> tuple[SectionSumm
     return summary, services
 
 
-def seed_documents(session: Session) -> SectionSummary:
+def seed_documents(session: Session, workspace_id: UUID) -> SectionSummary:
     summary = SectionSummary()
     processing_service = DocumentProcessingService()
     for team, topics in DOCUMENT_TOPICS.items():
@@ -225,10 +328,11 @@ def seed_documents(session: Session) -> SectionSummary:
                 category=category,
                 source="WorkShip Internal Knowledge Base",
             )
-            document = session.scalar(select(Document).where(Document.title == title))
+            document = session.scalar(select(Document).where(Document.workspace_id == workspace_id, Document.title == title))
             if document is None:
                 session.add(
                     Document(
+                        workspace_id=workspace_id,
                         title=title,
                         category=category,
                         source="WorkShip Internal Knowledge Base",
@@ -287,16 +391,17 @@ The {team} leadership team owns this document. It is reviewed at least annually 
 
 
 def seed_incidents(
-    session: Session, teams: dict[str, Team], services: dict[str, Service]
+    session: Session, teams: dict[str, Team], services: dict[str, Service], workspace_id: UUID
 ) -> SectionSummary:
     summary = SectionSummary()
     for title, severity, incident_status, service_name, owner_team, summary_text, root_cause in INCIDENT_DATA:
-        incident = session.scalar(select(Incident).where(Incident.title == title))
+        incident = session.scalar(select(Incident).where(Incident.workspace_id == workspace_id, Incident.title == title))
         if incident is not None:
             summary.skipped += 1
             continue
         session.add(
             Incident(
+                workspace_id=workspace_id,
                 title=title,
                 severity=severity,
                 status=incident_status,
@@ -311,15 +416,16 @@ def seed_incidents(
     return summary
 
 
-def seed_meetings(session: Session) -> SectionSummary:
+def seed_meetings(session: Session, workspace_id: UUID) -> SectionSummary:
     summary = SectionSummary()
     for title, meeting_date, participants, transcript in MEETING_DATA:
-        meeting = session.scalar(select(Meeting).where(Meeting.title == title))
+        meeting = session.scalar(select(Meeting).where(Meeting.workspace_id == workspace_id, Meeting.title == title))
         if meeting is not None:
             summary.skipped += 1
             continue
         session.add(
             Meeting(
+                workspace_id=workspace_id,
                 title=title,
                 date=meeting_date,
                 participants=participants,
@@ -331,7 +437,7 @@ def seed_meetings(session: Session) -> SectionSummary:
     return summary
 
 
-def seed_log_entries(session: Session) -> SectionSummary:
+def seed_log_entries(session: Session, workspace_id: UUID) -> SectionSummary:
     summary = SectionSummary()
     service_names = [service[0] for service in SERVICE_DATA]
     for index in range(100):
@@ -341,6 +447,7 @@ def seed_log_entries(session: Session) -> SectionSummary:
         message = f"{LOG_MESSAGES[index % len(LOG_MESSAGES)]}: {service_name}."
         existing = session.scalar(
             select(LogEntry).where(
+                LogEntry.workspace_id == workspace_id,
                 LogEntry.service == service_name,
                 LogEntry.timestamp == timestamp,
                 LogEntry.message == message,
@@ -351,6 +458,7 @@ def seed_log_entries(session: Session) -> SectionSummary:
             continue
         session.add(
             LogEntry(
+                workspace_id=workspace_id,
                 service=service_name,
                 level=level,
                 timestamp=timestamp,
@@ -378,15 +486,18 @@ def run_seed() -> None:
     initialize_database()
     session = SessionLocal()
     try:
-        team_result, teams = seed_teams(session)
-        employee_result = seed_employees(session, teams)
-        service_result, services = seed_services(session, teams)
-        document_result = seed_documents(session)
-        incident_result = seed_incidents(session, teams, services)
-        meeting_result = seed_meetings(session)
-        log_result = seed_log_entries(session)
+        ws_result, workspaces = seed_workspaces(session)
+        workspace_id = workspaces["workship-technologies"].id
+        team_result, teams = seed_teams(session, workspace_id)
+        employee_result = seed_employees(session, teams, workspace_id)
+        service_result, services = seed_services(session, teams, workspace_id)
+        document_result = seed_documents(session, workspace_id)
+        incident_result = seed_incidents(session, teams, services, workspace_id)
+        meeting_result = seed_meetings(session, workspace_id)
+        log_result = seed_log_entries(session, workspace_id)
         print_summary(
             {
+                "Workspaces": ws_result,
                 "Teams": team_result,
                 "Employees": employee_result,
                 "Services": service_result,

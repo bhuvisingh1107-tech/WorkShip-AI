@@ -30,6 +30,7 @@ class IncidentUpdate(BaseModel):
 
 class IncidentRead(IncidentBase):
     id: UUID
+    workspace_id: UUID
     created_at: datetime
     updated_at: datetime
 

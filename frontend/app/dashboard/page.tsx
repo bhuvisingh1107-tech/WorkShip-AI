@@ -1,7 +1,9 @@
-"use client";
-
+'use client';
 import { useEffect, useState } from "react";
+import { useAuth } from '@/context/AuthProvider';
+import { RequireAuth } from '@/components/RequireAuth';
 import { AlertTriangle, BookOpen, BriefcaseBusiness, LoaderCircle, Users } from "lucide-react";
+import { fetcher } from '@/lib/fetcher';
 
 type DashboardData = {
   overview: { totalEmployees: number; totalTeams: number; totalServices: number; totalDocuments: number; totalIncidents: number };
@@ -14,21 +16,17 @@ type DashboardData = {
   };
 };
 
-export default function DashboardPage() {
+const DashboardPageInner = () => {
   const [data, setData] = useState<DashboardData | null>(null);
   const [error, setError] = useState("");
 
   useEffect(() => {
-    fetch("/api/dashboard")
-      .then((response) => {
-        if (!response.ok) throw new Error("Unable to load dashboard data.");
-        return response.json() as Promise<DashboardData>;
-      })
+    fetcher<DashboardData>("/api/dashboard")
       .then(setData)
       .catch((requestError) => setError(requestError instanceof Error ? requestError.message : "Something went wrong."));
   }, []);
 
-  if (error) return <section className="p-8"><p className="rounded-lg bg-red-50 p-3 text-sm text-red-700">{error}</p></section>;
+  if (error) return <section className="p-8"><p className="rounded-bg-red-50 p-3 text-sm text-red-700">{error}</p></section>;
   if (!data) return <section className="flex items-center gap-2 p-8 text-sm text-slate-600"><LoaderCircle className="size-4 animate-spin" />Loading dashboard…</section>;
 
   const cards = [
@@ -39,18 +37,25 @@ export default function DashboardPage() {
     ["Incidents", data.overview.totalIncidents, AlertTriangle],
   ] as const;
 
-  return <section className="space-y-7 px-4 py-8 sm:px-6 lg:px-8 lg:py-10">
-    <div className="rounded-2xl bg-gradient-to-br from-[#C4B5FD] via-[#B8B5FF] to-[#CFFAFE] px-6 py-7 text-[#312E81] shadow-lg shadow-[#B8B5FF]/20"><p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#5B54A6]">WorkShip AI</p><h1 className="mt-2 text-2xl font-semibold tracking-tight">Your operations command center</h1><p className="mt-2 max-w-2xl text-sm leading-6 text-[#5B54A6]">Monitor enterprise knowledge, services, and active operational signals from one connected workspace.</p></div>
-    <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">{cards.map(([label, value, Icon]) => <div className="rounded-xl border border-[#E9E5FF] bg-white p-4 shadow-sm shadow-[#B8B5FF]/10" key={label}><Icon className="size-5 text-[#818CF8]" /><p className="mt-4 text-2xl font-semibold text-[#312E81]">{value}</p><p className="mt-1 text-sm text-slate-500">{label}</p></div>)}</div>
-    <div className="grid gap-5 lg:grid-cols-2">
-      <Panel title="Incident severity"><div className="flex h-3 overflow-hidden rounded-full bg-[#F5F3FF]">{Object.entries(data.incidentAnalytics).map(([severity, count], index) => <div aria-label={`${severity}: ${count}`} className={["bg-[#FBCFE8]", "bg-[#FDE68A]", "bg-[#B8B5FF]", "bg-[#CFFAFE]"][index]} key={severity} style={{width:`${count / Math.max(1, Object.values(data.incidentAnalytics).reduce((sum,value)=>sum+value,0))*100}%`}} />)}</div><div className="mt-4 grid grid-cols-4 gap-3">{Object.entries(data.incidentAnalytics).map(([severity, count]) => <div className="text-center" key={severity}><p className="text-lg font-semibold text-[#312E81]">{count}</p><p className="mt-1 text-xs capitalize text-slate-500">{severity}</p></div>)}</div></Panel>
-      <Panel title="Service health"><div className="flex items-center gap-2"><div className="h-3 flex-1 rounded-full bg-[#A7F3D0]" /><span className="text-sm font-medium text-[#312E81]">{Object.values(data.serviceAnalytics.byStatus).reduce((sum,value)=>sum+value,0)} healthy</span></div><div className="mt-4 grid grid-cols-3 gap-3 text-center"><div className="rounded-lg bg-[#A7F3D0] p-3 text-sm text-[#246B57]">Healthy</div><div className="rounded-lg bg-[#FDE68A] p-3 text-sm text-[#715D16]">Warning</div><div className="rounded-lg bg-[#FBCFE8] p-3 text-sm text-[#8A4166]">Down</div></div></Panel>
-    </div>
-    <div className="grid gap-5 lg:grid-cols-3"><Activity title="Recent incidents" items={data.recentActivity.incidents.map((item) => `${item.title} · ${item.severity}`)} /><Activity title="Recent documents" items={data.recentActivity.documents.map((item) => item.title)} /><Activity title="Recent meetings" items={data.recentActivity.meetings.map((item) => item.title)} /></div>
-  </section>;
-}
+  return (
+    <section className="space-y-7 px-4 py-8 sm:px-6 lg:px-8 lg:py-10">
+      <div className="rounded-2xl bg-gradient-to-br from-[#C4B5FD] via-[#B8B5FF] to-[#CFFAFE] px-6 py-7 text-[#312E81] shadow-lg shadow-[#B8B5FF]/20">
+        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#5B54A6]">WorkShip AI</p>
+        <h1 className="mt-2 text-2xl font-semibold tracking-tight">Your operations command center</h1>
+        <p className="mt-2 max-w-2xl text-sm leading-6 text-[#5B54A6]">Monitor enterprise knowledge, services, and active operational signals from one connected workspace.</p>
+      </div>
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">{cards.map(([label, value, Icon]) => <div className="rounded-xl border border-[#E9E5FF] bg-white p-4 shadow-sm shadow-[B8B5FF]/10" key={label}><Icon className="size-5 text-[#818CF8]" /><p className="mt-4 text-2xl font-semibold text-[#312E81]">{value}</p><p className="mt-1 text-sm text-slate-500">{label}</p></div>)}</div>
+      <div className="grid gap-5 lg:grid-cols-2">
+        <Panel title="Incident severity"><div className="flex h-3 overflow-hidden rounded-full bg-[#F5F3FF]">{Object.entries(data.incidentAnalytics).map(([severity, count], index) => <div aria-label={`${severity}: ${count}`} className={["bg-[#FBCFE8]", "bg-[#FDE68A]", "bg-[#B8B5FF]", "bg-[#CFFAFE]"][index]} key={severity} style={{width:`${count / Math.max(1, Object.values(data.incidentAnalytics).reduce((sum,value)=>sum+value,0))*100}%`}} />)}</div><div className="mt-4 grid grid-cols-4 gap-3">{Object.entries(data.incidentAnalytics).map(([severity, count]) => <div className="text-center" key={severity}><p className="text-lg font-semibold text-[#312E81]">{count}</p><p className="mt-1 text-xs capitalize text-slate-500">{severity}</p></div>)}</div></Panel><Panel title="Service health"><div className="flex items-center gap-2"><div className="h-3 flex-1 rounded-full bg-[#A7F3D0]" /><span className="text-sm font-medium text-[#312E81]">{Object.values(data.serviceAnalytics.byStatus).reduce((sum,value)=>sum+value,0)} healthy</span></div><div className="mt-4 grid grid-cols-3 gap-3 text-center"><div className="rounded-lg bg-[#A7F3D0] p-3 text-sm text-[#246B57]">Healthy</div><div className="rounded-lg bg-[#FDE68A] p-3 text-sm text-[#715D16]">Warning</div><div className="rounded-lg bg-[#FBCFE8] p-3 text-sm text-[#8A4166]">Down</div></div></Panel>
+      </div>
+      <div className="grid gap-5 lg:grid-cols-3"><Activity title="Recent incidents" items={data.recentActivity.incidents.map((item) => `${item.title} · ${item.severity}`)} /><Activity title="Recent documents" items={data.recentActivity.documents.map((item) => item.title)} /><Activity title="Recent meetings" items={data.recentActivity.meetings.map((item) => item.title)} /></div>
+    </section>
+  );
+};
 
-function Panel({ title, children }: { title: string; children: React.ReactNode }) { return <div className="rounded-xl border border-[#E9E5FF] bg-white p-5 shadow-sm shadow-[#B8B5FF]/10"><h2 className="text-sm font-semibold text-[#312E81]">{title}</h2><div className="mt-4">{children}</div></div>; }
+function Panel({ title, children }: { title: string; children: React.ReactNode }) {
+  return <div className="rounded-xl border border-[#E9E5FF] bg-white p-5 shadow-sm shadow-[B8B5FF]/10"><h2 className="text-sm font-semibold text-[#312E81]">{title}</h2><div className="mt-4">{children}</div></div>;
+}
 function Activity({ title, items }: { title: string; items: string[] }) {
   return (
     <Panel title={title}>
@@ -66,4 +71,8 @@ function Activity({ title, items }: { title: string; items: string[] }) {
       </ul>
     </Panel>
   );
+}
+
+export default function DashboardPage() {
+  return <RequireAuth><DashboardPageInner /></RequireAuth>;
 }

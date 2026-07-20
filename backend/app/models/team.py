@@ -1,8 +1,9 @@
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
+from uuid import UUID
 
-from sqlalchemy import String, Text
+from sqlalchemy import String, Text, ForeignKey, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.database import Base, TimestampMixin, UUIDPrimaryKeyMixin
@@ -15,8 +16,12 @@ if TYPE_CHECKING:
 
 class Team(UUIDPrimaryKeyMixin, TimestampMixin, Base):
     __tablename__ = "teams"
+    __table_args__ = (
+        UniqueConstraint("workspace_id", "name", name="uq_team_workspace_name"),
+    )
 
-    name: Mapped[str] = mapped_column(String(255), unique=True, index=True)
+    workspace_id: Mapped[UUID] = mapped_column(ForeignKey("workspaces.id"), nullable=False)
+    name: Mapped[str] = mapped_column(String(255), index=True)
     description: Mapped[str | None] = mapped_column(Text, nullable=True)
 
     employees: Mapped[list[Employee]] = relationship(back_populates="team")

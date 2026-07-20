@@ -7,3 +7,7 @@ alembic
 psycopg[binary]
 pgvector
 sentence-transformers==2.7.0
+slowapi
+supabase>=2.0.0
+python-jose[cryptography]
+passlib[bcrypt]

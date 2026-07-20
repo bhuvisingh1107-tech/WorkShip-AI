@@ -9,24 +9,31 @@ from app.schemas.team import TeamCreate, TeamUpdate
 
 
 class TeamService:
-    def __init__(self, db: Session) -> None:
+    def __init__(self, db: Session, workspace_id: UUID) -> None:
         self.repository = TeamRepository(db)
+        self.workspace_id = workspace_id
 
-    def list(self, *, skip: int, limit: int, sort_by: str, sort_order: str, name: str | None):
-        filters = [Team.name.ilike(f"%{name}%")] if name else []
+    def list(self, *, skip: int = 0, limit: int = 100, sort_by: str = "name", sort_order: str = "asc", name: str | None = None):
+        filters = [self.repository.model.workspace_id == self.workspace_id]
+        if name:
+            filters.append(self.repository.model.name.ilike(f"%{name}%"))
         return self.repository.list(skip=skip, limit=limit, sort_by=sort_by, sort_order=sort_order, filters=filters)
 
-    def get(self, resource_id: UUID) -> Team:
-        resource = self.repository.get(resource_id)
-        if resource is None:
+    def get(self, team_id: UUID) -> Team:
+        team = self.repository.get(team_id)
+        if team is None or team.workspace_id != self.workspace_id:
             raise ResourceNotFoundError("Team not found")
-        return resource
+        return team
 
     def create(self, payload: TeamCreate) -> Team:
-        return self.repository.create(payload.model_dump())
+        data = payload.model_dump()
+        data["workspace_id"] = self.workspace_id
+        return self.repository.create(data)
 
-    def update(self, resource_id: UUID, payload: TeamUpdate) -> Team:
-        return self.repository.update(self.get(resource_id), payload.model_dump(exclude_unset=True))
+    def update(self, team_id: UUID, payload: TeamUpdate) -> Team:
+        team = self.get(team_id)
+        return self.repository.update(team, payload.model_dump(exclude_unset=True))
 
-    def delete(self, resource_id: UUID) -> None:
-        self.repository.delete(self.get(resource_id))
+    def delete(self, team_id: UUID) -> None:
+        team = self.get(team_id)
+        self.repository.delete(team)

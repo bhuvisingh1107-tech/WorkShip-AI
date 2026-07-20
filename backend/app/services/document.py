@@ -12,48 +12,49 @@ from app.services.document_processing import DocumentProcessingService
 
 
 class DocumentService:
-    def __init__(self, db: Session) -> None:
+    def __init__(self, db: Session, workspace_id: UUID) -> None:
         self.repository = DocumentRepository(db)
         self.processing_service = DocumentProcessingService()
         self.embedding_service = EmbeddingService(db)
+        self.workspace_id = workspace_id
 
     def list(
         self,
         *,
-        skip: int,
-        limit: int,
-        sort_by: str,
-        sort_order: str,
-        category: str | None,
-        source: str | None,
-        query: str | None,
+        skip: int = 0,
+        limit: int = 100,
+        sort_by: str = "created_at",
+        sort_order: str = "desc",
+        category: str | None = None,
+        source: str | None = None,
+        query: str | None = None,
     ):
-        filters = []
+        filters = [self.repository.model.workspace_id == self.workspace_id]
         if category:
-            filters.append(Document.category == category)
+            filters.append(self.repository.model.category == category)
         if source:
-            filters.append(Document.source == source)
+            filters.append(self.repository.model.source == source)
         if query:
             pattern = f"%{query.strip()}%"
             filters.append(
                 or_(
-                    Document.title.ilike(pattern),
-                    Document.content.ilike(pattern),
-                    Document.summary.ilike(pattern),
-                    cast(Document.tags, String).ilike(pattern),
+                    self.repository.model.title.ilike(pattern),
+                    self.repository.model.content.ilike(pattern),
+                    self.repository.model.summary.ilike(pattern),
+                    cast(self.repository.model.tags, String).ilike(pattern),
                 )
             )
         return self.repository.list(skip=skip, limit=limit, sort_by=sort_by, sort_order=sort_order, filters=filters)
 
-    def get(self, resource_id: UUID) -> Document:
-        resource = self.repository.get(resource_id)
-        if resource is None:
+    def get(self, document_id: UUID) -> Document:
+        document = self.repository.get(document_id)
+        if document is None or document.workspace_id != self.workspace_id:
             raise ResourceNotFoundError("Document not found")
-        return resource
+        return document
 
     def semantic_search(self, *, query: str, limit: int):
         query_embedding = self.embedding_service.generate_embedding(query)
-        return self.repository.semantic_search(query_embedding, limit)
+        return self.repository.semantic_search(query_embedding, limit, self.workspace_id)
 
     def create(self, payload: DocumentCreate) -> Document:
         processing = self.processing_service.process(
@@ -64,6 +65,7 @@ class DocumentService:
         )
         data = payload.model_dump()
         data.update(
+            workspace_id=self.workspace_id,
             content=processing.content,
             summary=processing.summary,
             tags=processing.tags,
@@ -71,8 +73,8 @@ class DocumentService:
         )
         return self.repository.create(data)
 
-    def update(self, resource_id: UUID, payload: DocumentUpdate) -> Document:
-        document = self.get(resource_id)
+    def update(self, document_id: UUID, payload: DocumentUpdate) -> Document:
+        document = self.get(document_id)
         data = payload.model_dump(exclude_unset=True)
         if {"title", "category", "source", "content"}.intersection(data):
             processing = self.processing_service.process(
@@ -92,5 +94,6 @@ class DocumentService:
                 )
         return self.repository.update(document, data)
 
-    def delete(self, resource_id: UUID) -> None:
-        self.repository.delete(self.get(resource_id))
+    def delete(self, document_id: UUID) -> None:
+        document = self.get(document_id)
+        self.repository.delete(document)

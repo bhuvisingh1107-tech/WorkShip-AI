@@ -10,37 +10,42 @@ from app.schemas.meeting import MeetingCreate, MeetingUpdate
 
 
 class MeetingService:
-    def __init__(self, db: Session) -> None:
+    def __init__(self, db: Session, workspace_id: UUID) -> None:
         self.repository = MeetingRepository(db)
+        self.workspace_id = workspace_id
 
     def list(
         self,
         *,
-        skip: int,
-        limit: int,
-        sort_by: str,
-        sort_order: str,
-        date_from: date | None,
-        date_to: date | None,
+        skip: int = 0,
+        limit: int = 100,
+        sort_by: str = "date",
+        sort_order: str = "desc",
+        date_from: date | None = None,
+        date_to: date | None = None,
     ):
-        filters = []
+        filters = [self.repository.model.workspace_id == self.workspace_id]
         if date_from:
-            filters.append(Meeting.date >= date_from)
+            filters.append(self.repository.model.date >= date_from)
         if date_to:
-            filters.append(Meeting.date <= date_to)
+            filters.append(self.repository.model.date <= date_to)
         return self.repository.list(skip=skip, limit=limit, sort_by=sort_by, sort_order=sort_order, filters=filters)
 
-    def get(self, resource_id: UUID) -> Meeting:
-        resource = self.repository.get(resource_id)
-        if resource is None:
+    def get(self, meeting_id: UUID) -> Meeting:
+        meeting = self.repository.get(meeting_id)
+        if meeting is None or meeting.workspace_id != self.workspace_id:
             raise ResourceNotFoundError("Meeting not found")
-        return resource
+        return meeting
 
     def create(self, payload: MeetingCreate) -> Meeting:
-        return self.repository.create(payload.model_dump())
+        data = payload.model_dump()
+        data["workspace_id"] = self.workspace_id
+        return self.repository.create(data)
 
-    def update(self, resource_id: UUID, payload: MeetingUpdate) -> Meeting:
-        return self.repository.update(self.get(resource_id), payload.model_dump(exclude_unset=True))
+    def update(self, meeting_id: UUID, payload: MeetingUpdate) -> Meeting:
+        meeting = self.get(meeting_id)
+        return self.repository.update(meeting, payload.model_dump(exclude_unset=True))
 
-    def delete(self, resource_id: UUID) -> None:
-        self.repository.delete(self.get(resource_id))
+    def delete(self, meeting_id: UUID) -> None:
+        meeting = self.get(meeting_id)
+        self.repository.delete(meeting)
