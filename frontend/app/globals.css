@@ -45,3 +45,67 @@ body {
 .dark .border-slate-100, .dark .border-slate-200, .dark .border-slate-300 { border-color: #334155 !important; }
 .dark input, .dark textarea, .dark select { background-color: #111827 !important; color: #e0e7ff !important; }
 .dark .bg-\[\#FBCFE8\] { background-color: #4c1d3b !important; }
+
+/* ── Skeleton loader animation ────────────────────────────── */
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+.skeleton {
+  background: linear-gradient(90deg, #f0eef9 25%, #e9e5ff 37%, #f0eef9 63%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s ease-in-out infinite;
+  border-radius: 0.5rem;
+}
+
+.skeleton-dark {
+  background: linear-gradient(90deg, #1e1b4b 25%, #312e81 37%, #1e1b4b 63%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s ease-in-out infinite;
+  border-radius: 0.5rem;
+}
+
+/* ── Login page animations ────────────────────────────────── */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(24px) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes gradientShift {
+  0%, 100% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+}
+
+.animate-fade-in-up {
+  animation: fadeInUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.animate-gradient {
+  background-size: 300% 300%;
+  animation: gradientShift 12s ease infinite;
+}
+
+/* ── Spinner ──────────────────────────────────────────────── */
+@keyframes spin-smooth {
+  to { transform: rotate(360deg); }
+}
+
+.animate-spin-smooth {
+  animation: spin-smooth 0.8s linear infinite;
+}
+
+/* ── Nav item transitions ─────────────────────────────────── */
+.nav-item-hover {
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.nav-item-hover:hover {
+  transform: translateX(2px);
+}

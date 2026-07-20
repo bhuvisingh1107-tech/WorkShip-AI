@@ -1,8 +1,7 @@
 import type { Metadata } from "next";
-import { AppShell } from "@/components/app-shell";
 import "./globals.css";
 import { AuthProvider } from "@/context/AuthProvider";
-import AuthRedirectHandler from "./AuthRedirectHandler";
+import { ConditionalShell } from "@/components/app-shell";
 
 export const metadata: Metadata = {
   title: { default: "WorkShip AI | Operations Intelligence", template: "%s | WorkShip AI" },
@@ -16,11 +15,10 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className="h-full antialiased">
-      <body className="min-h-full">
+    <html lang="en" className="h-full antialiased" suppressHydrationWarning>
+      <body className="min-h-full" suppressHydrationWarning>
         <AuthProvider>
-          <AuthRedirectHandler />
-          <AppShell>{children}</AppShell>
+          <ConditionalShell>{children}</ConditionalShell>
         </AuthProvider>
       </body>
     </html>

@@ -1,25 +1,61 @@
 'use client';
 
-import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
 import { supabase } from '@/lib/supabaseClient';
+
+// Known email → role map (fallback when user_metadata.role is not set)
+const KNOWN_ROLES: Record<string, string> = {
+  'test@workshipai.com': 'Manager',
+};
+
+// Role hierarchy for permissions
+const ROLE_PERMISSIONS: Record<string, string[]> = {
+  Employee: ['/dashboard', '/copilot', '/incidents', '/knowledge', '/settings'],
+  Manager: ['/dashboard', '/copilot', '/incidents', '/knowledge', '/company-sales', '/settings'],
+  CEO: ['/dashboard', '/copilot', '/incidents', '/knowledge', '/company-sales', '/settings'],
+};
+
+export type UserRole = 'Employee' | 'Manager' | 'CEO';
 
 interface AuthContextType {
   user: any;
+  role: UserRole | null;
   loading: boolean;
-  login: (email: string, password: string, rememberMe: boolean) => Promise<void>;
+  login: (email: string, password: string, selectedRole: UserRole) => Promise<void>;
   logout: () => Promise<void>;
+  canAccess: (path: string) => boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+function resolveRole(user: any): UserRole {
+  // 1. Check user_metadata.role (set by Supabase admin or profiles)
+  if (user?.user_metadata?.role) {
+    return user.user_metadata.role as UserRole;
+  }
+  // 2. Check app_metadata.role
+  if (user?.app_metadata?.role) {
+    return user.app_metadata.role as UserRole;
+  }
+  // 3. Fallback to known email map
+  if (user?.email && KNOWN_ROLES[user.email]) {
+    return KNOWN_ROLES[user.email] as UserRole;
+  }
+  // 4. Default to Employee
+  return 'Employee';
+}
+
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<any>(null);
+  const [role, setRole] = useState<UserRole | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
 
   useEffect(() => {
     // Get initial session
     supabase.auth.getSession().then(({ data: { session } }) => {
-      setUser(session?.user ?? null);
+      const u = session?.user ?? null;
+      setUser(u);
+      setRole(u ? resolveRole(u) : null);
       setLoading(false);
     });
 
@@ -27,50 +63,57 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUser(session?.user ?? null);
+      const u = session?.user ?? null;
+      setUser(u);
+      setRole(u ? resolveRole(u) : null);
       setLoading(false);
     });
 
     return () => subscription.unsubscribe();
   }, []);
 
-  const login = async (email: string, password: string, rememberMe: boolean) => {
-    const { error } = await supabase.auth.signInWithPassword({
+  const login = useCallback(async (email: string, password: string, selectedRole: UserRole) => {
+    // First authenticate with Supabase
+    const { data, error } = await supabase.auth.signInWithPassword({
       email,
       password,
-      options: {
-        // persistSession controls whether the session is stored in storage
-        // If rememberMe is false, we don't persist session (session will be removed on page reload)
-        // However, Supabase's default is true; we can set to false when rememberMe is false.
-        // Note: This affects whether the session persists across page reloads.
-        // We'll set it to rememberMe.
-        // Additionally, we might want to set the storage key? Not needed.
-        // The persistSession option is available in @supabase/supabase-js v2.
-        // If not available, we can ignore.
-        // We'll assume it's available.
-        // If not, we can fallback to manual session handling.
-        // For simplicity, we'll just call signInWithPassword without options and rely on default.
-        // TODO: Implement proper remember me using persistence option.
-        // For now, we'll just ignore rememberMe and always persist.
-        // We'll add a note.
-        // Actually, we can set the option if available.
-        // We'll try to pass { persistSession: rememberMe }.
-      },
     });
     if (error) throw error;
-  };
 
-  const logout = async () => {
+    // Resolve the actual role
+    const actualRole = resolveRole(data.user);
+
+    // Validate selected role matches actual role
+    if (selectedRole !== actualRole) {
+      // Sign out since role doesn't match
+      await supabase.auth.signOut();
+      throw new Error(
+        `Selected role "${selectedRole}" does not match your account role "${actualRole}".`
+      );
+    }
+
+    // Role matches — state will be updated by onAuthStateChange listener
+  }, []);
+
+  const logout = useCallback(async () => {
     const { error } = await supabase.auth.signOut();
     if (error) throw error;
-  };
+    setUser(null);
+    setRole(null);
+  }, []);
 
-  if (loading) {
-    return <div>Loading...</div>;
-  }
+  const canAccess = useCallback(
+    (path: string): boolean => {
+      if (!role) return false;
+      const allowed = ROLE_PERMISSIONS[role];
+      if (!allowed) return false;
+      return allowed.some((p) => path === p || path.startsWith(p + '/'));
+    },
+    [role]
+  );
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, logout }}>
+    <AuthContext.Provider value={{ user, role, loading, login, logout, canAccess }}>
       {children}
     </AuthContext.Provider>
   );

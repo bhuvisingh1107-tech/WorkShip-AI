@@ -70,7 +70,7 @@ const KnowledgePageInner = () => {
                         "#[#FBCFE8]",
                       ][index % 4]}
                       key={categoryName}
-                      style={{ width: `${(count / documents.length ?? 1) * 100}%` }}
+                      style={{ width: `${(count / (documents.length || 1)) * 100}%` }}
                     />
                   ))}
                 </div>
@@ -133,8 +133,9 @@ const KnowledgePageInner = () => {
               )}
             </>
           )}
-        </div>
-      </section>
+        </>
+      )}
+    </section>
     );
   };
 

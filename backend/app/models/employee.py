@@ -28,7 +28,7 @@ class Employee(UUIDPrimaryKeyMixin, TimestampMixin, Base):
     email: Mapped[str] = mapped_column(String(255), index=True, nullable=False)
     supabase_user_id: Mapped[UUID | None] = mapped_column(Uuid(as_uuid=True), unique=True, nullable=True)
     preferences: Mapped[Dict[str, Any]] = mapped_column(
-        JSON, nullable=False, server_default=text("'{}'::json")
+        JSON, nullable=False, server_default=text("'{}'")
     )
     role: Mapped[str | None] = mapped_column(String(255), nullable=True)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)

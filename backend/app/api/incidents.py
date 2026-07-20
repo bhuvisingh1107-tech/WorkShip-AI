@@ -18,7 +18,7 @@ from app.schemas.incident import (
 )
 from app.services.incident import IncidentService
 
-router = APIRouter(prefix="/incidents", paramses=["Incidents"])
+router = APIRouter(prefix="/incidents", tags=["Incidents"])
 
 
 def get_incident_service(
