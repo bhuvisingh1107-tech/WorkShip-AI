@@ -383,7 +383,6 @@ sequenceDiagram
   - `logo`: Optional brand logo URL
 
 #### AI Search Pipeline
-```mermaid
 graph LR
     A[Document Upload] --> B[Document Processing Service]
     B --> C[Clean & Normalize Text]
